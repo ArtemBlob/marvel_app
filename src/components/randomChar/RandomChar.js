@@ -27,7 +27,7 @@ const RandomChar = () => {
         setLoading(false); // Как только загружаются данные, позиция loading меняется на false
     }
 
-    const onCharLoading = () => {
+    const onCharLoading = () => { //функция состояния загрузки для вызова спиннера
         setLoading(true);
     }
     

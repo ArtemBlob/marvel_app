@@ -37,11 +37,11 @@ const CharInfo = (props) => {
         setLoading(false);// Как только загружаются данные, позиция loading меняется на false
     }
 
-    const onCharLoading = () => {
+    const onCharLoading = () => { //функция состояния загрузки для вызова спиннера
         setLoading(true);
     }
     
-    const onError = () => { //метод по выводу сообщения об ошибке
+    const onError = () => { //функция по выводу сообщения об ошибке
         setLoading(false);
         setError(true);
     }

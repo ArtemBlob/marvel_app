@@ -28,11 +28,11 @@ const CharList = (props) => {
             .catch(onError)
     }
 
-    const onCharListLoading = () => {
+    const onCharListLoading = () => { //функция состояния загрузки для вызова спиннера
         setNewItemLoading(true);
     }
 
-    const onCharListLoaded = (newCharList) => { //метод по загрузке листа персонажей
+    const onCharListLoaded = (newCharList) => { //функция по загрузке листа персонажей
         let ended = false; //спец переменная для установки окончания перснажей
         if (newCharList.length < 9) { //если кол-во персонажей при загрузке меньше 9, значит персонажи закончились
             ended = true;
@@ -70,7 +70,7 @@ const CharList = (props) => {
                 tabIndex={0}
                 ref={el => itemRefs.current[i] = el} //коллбэк реф, который принимает в себя единственным аргументом тот элемент, на котором он был вызван, в данном случае это list item (li). Перееносим li в массив
                 onClick={() => {
-                    props.onCharSelected(item.id);
+                    props.onCharSelected(item.id); //получение id для передачи пропса происходит из объекта в MarvelService
                     focusOnItem(i); //вызов функции фокуса
                 }}
                 onKeyDown={(e) => { //управление элементами нажатием клавиш
