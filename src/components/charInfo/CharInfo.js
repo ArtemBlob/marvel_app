@@ -3,16 +3,14 @@ import PropTypes from 'prop-types';
 import Spinner from '../spinner/Spinner';
 import Skeleton from '../skeleton/Skeleton';
 import ErrorMessage from '../errorMessage/ErrorMessage';
-import MarvelService from '../../services/MarvelService';
+import useMarvelService from '../../services/MarvelService';
 import './charInfo.scss';
 
 const CharInfo = (props) => {
 
     const [char, setChar] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(false);
 
-    const marvelService = new MarvelService();
+    const {loading, error, getCharacter, clearError} = useMarvelService();
 
     useEffect(() => {
         updateChar();
@@ -22,29 +20,19 @@ const CharInfo = (props) => {
 
 
     const updateChar = () => {
-        const {charId} = props;
+        const {charId} = props; //получение айди из пропсов
         if (!charId) {
             return;
         }
-        onCharLoading();
-        marvelService.getCharacter(charId)
+        clearError(); //очистка ошибки для отрисовки новых данных
+        getCharacter(charId) //получение персонажа по айди
             .then(onCharLoaded)
-            .catch(onError);
     }
 
     const onCharLoaded = (char) => { //функция по загрузке персонажа
         setChar(char);  // {char} - тоже самое что и {char:char}.
-        setLoading(false);// Как только загружаются данные, позиция loading меняется на false
     }
 
-    const onCharLoading = () => { //функция состояния загрузки для вызова спиннера
-        setLoading(true);
-    }
-    
-    const onError = () => { //функция по выводу сообщения об ошибке
-        setLoading(false);
-        setError(true);
-    }
 
     const skeleton = char || error || loading ? null : <Skeleton/>;
     const errorMessage = error ? <ErrorMessage/> : null;

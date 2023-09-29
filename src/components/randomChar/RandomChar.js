@@ -1,17 +1,14 @@
 import { useState, useEffect } from 'react';
 import Spinner from '../spinner/Spinner';
 import ErrorMessage from '../errorMessage/ErrorMessage';
-import MarvelService from '../../services/MarvelService';
+import useMarvelService from '../../services/MarvelService';
 import './randomChar.scss';
 import mjolnir from '../../resources/img/mjolnir.png';
 
 const RandomChar = () => {
 
     const [char, setChar] = useState({});
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(false);
-
-    const marvelService = new MarvelService();
+    const {loading, error, getCharacter, clearError} = useMarvelService(); //деструктуризация переменных loading и error из хука useMarvelService
 
     useEffect(() => {
         updateChar();
@@ -23,31 +20,21 @@ const RandomChar = () => {
     }, []) //запуск формирования случайного персонажа только при первой визуализации компонента
 
     const onCharLoaded = (char) => { //функция по загрузке персонажа
-        setChar(char);  // {char} - тоже самое что и {char:char}.
-        setLoading(false); // Как только загружаются данные, позиция loading меняется на false
+        setChar(char); // {char} - тоже самое что и {char:char}.
     }
 
-    const onCharLoading = () => { //функция состояния загрузки для вызова спиннера
-        setLoading(true);
-    }
-    
-    const onError = () => { //функция по выводу сообщения об ошибке
-        setLoading(false);
-        setError(true);
-    }
 
     const updateChar = () => {
+        clearError(); //функция очистки ошибки для отрисовки новых данных
         const id = Math.floor(Math.random() * (1011400 - 1011000) + 1011000); //для получения рандомного айди персонажа, math.floor для округленя результата
-        onCharLoading();
-        marvelService.getCharacter(id) //работу объекта можно посмотреть в MarvelService
-            .then(onCharLoaded) //при использовании промисов, если аргументом then - является ссылка на функцию, аргумент, который придет в then будет автоматически передаваться в функцию
-            .catch(onError);
+        getCharacter(id) //работу функции можно посмотреть в MarvelService
+            .then(onCharLoaded); //при использовании промисов, если аргументом then - является ссылка на функцию, аргумент, который придет в then будет автоматически передаваться в функцию
     }
 
 
     const errorMessage = error ? <ErrorMessage/> : null;
     const spinner = loading ? <Spinner/> : null;
-    const content = !(loading || error) ? <View char={char}/> : null; //есди нет ошибки и загрузки, запускать рендерящийся компонент. null ничего на странице не отобразит
+    const content = !(loading || error) ? <View char={char}/> : null; //если нет ошибки и загрузки, запускать рендерящийся компонент. null ничего на странице не отобразит
 
     return (
         <div className="randomchar">

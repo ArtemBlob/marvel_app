@@ -2,34 +2,27 @@ import { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import Spinner from '../spinner/Spinner';
 import ErrorMessage from '../errorMessage/ErrorMessage';
-import MarvelService from '../../services/MarvelService';
+import useMarvelService from '../../services/MarvelService';
 import './charList.scss';
 
 const CharList = (props) => {
 
     const [charList, setCharList] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(false);
-    const [newItemLoading, setNewItemLoading] = useState(false); //загрузка, относящаяся к новым элементам, переменная для кнопки
+    const [newItemLoading, setNewItemLoading] = useState(false); //загрузка новых персонажей
     const [offset, setOffset] = useState(210); //текущий отступ списка персонажей в сервисе Марвел АПИ, добавлено для изменений
     const [charEnded, setCharEnded] = useState(false);  //на сервисе закончились персонажи
 
-    const marvelService = new MarvelService();
+    const {loading, error, getAllCharacters} = useMarvelService();
 
     useEffect(() => {
-        onRequest(); //здесь нет аргумента, будет подставлен offset, равный 9
+        onRequest(offset, true); //будет подставлен offset, равный 9. Второй аргумент true для первичной загрузки
          // eslint-disable-next-line
     }, [])   //запуск формирования листка персонажей только при первой визуализации компонента
   
-    const onRequest = (offset) => { // функция по формированию листка персонажей, в том числе по клику, если у onRequest есть аргумент
-        onCharListLoading();
-        marvelService.getAllCharacters(offset)
+    const onRequest = (offset, initial) => { // функция по формированию листка персонажей, в том числе по клику
+        initial ? setNewItemLoading(false) : setNewItemLoading(true); //если загрузка первичная, то загрузку запускать надо. При повторной загрузке состояние true, то есть не нужно запускать спиннер
+        getAllCharacters(offset)
             .then(onCharListLoaded)
-            .catch(onError)
-    }
-
-    const onCharListLoading = () => { //функция состояния загрузки для вызова спиннера
-        setNewItemLoading(true);
     }
 
     const onCharListLoaded = (newCharList) => { //функция по загрузке листа персонажей
@@ -38,15 +31,9 @@ const CharList = (props) => {
             ended = true;
         }
         setCharList(charList => [...charList, ...newCharList]);//формирование нового массива из новых и старых элементов. При первом запуске, в этой функции массив charList пустой и формируется только из newCharList
-        setLoading(loading => false);
         setNewItemLoading(newItemLoading => false);
         setOffset(offset => offset + 9); //увеличение отступа персонажей на 9, для дозагрузки новых персонажей
         setCharEnded(charEnded => ended); //метка для окончания персонажей
-    }
-
-    const onError = () => { //функция по выводу сообщения об ошибке 
-        setError(true);
-        setLoading(loading => false);
     }
 
     const itemRefs = useRef([]); //это массив, в котором будут храниться ссылки на DOM-элементы, создан, чтобы иметь доступ к элементам по индексу
@@ -93,16 +80,14 @@ const CharList = (props) => {
     }
 
     const items = renderItems(charList);
-
     const errorMessage = error ? <ErrorMessage/> : null;
-    const spinner = loading ? <Spinner/> : null;
-    const content = !(loading || error) ? items : null;
+    const spinner = loading && !newItemLoading ? <Spinner/> : null; //запускать загрузку только тогда, когда это не загрузка новых персонажей. Запуск спиннера только при первом загружении
 
     return (
         <div className="char__list">
             {errorMessage}
             {spinner}
-            {content}
+            {items}
             <button className="button button__main button__long"
                     disabled={newItemLoading}
                     style={{'display': charEnded ? 'none' : 'block'}} //ecли charEnded (закончились персонажи на сервиса) true - display: none, иначе display: block

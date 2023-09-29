@@ -1,42 +1,77 @@
+import { useHttp } from "../hooks/http.hook";
 
-class MarvelService {
-    _apiBase = 'https://gateway.marvel.com:443/v1/public/';
-    _apiKey ='apikey=346cb8ad17bfaf962c6faf338c99e4b4';
 
-    _baseOffset = 210
+const useMarvelService = () => {
+    const {loading, request, error, clearError} = useHttp();
 
-    getResource = async(url) => { //get запрос с получением информации с сервера
-        let res = await fetch(url);
+    const _apiBase = 'https://gateway.marvel.com:443/v1/public/';
+    const _apiKey ='apikey=346cb8ad17bfaf962c6faf338c99e4b4';
+
+    const _baseOffset = 210
+
+
+    const getAllCharacters = async (offset = _baseOffset) =>{
+        const res = await request(`${_apiBase}characters?limit=9&offset=${offset}&${_apiKey}`);
+        return res.data.results.map(_transformCharacter); //массив данных персонажей, которые в колбэке превращаются в массив объектов нужного формата
+    }
+
+    const getCharacter = async (id) =>{ //функция по получению персонажа и возврата данных в объект
+        const res = await request(`${_apiBase}characters/${id}?${_apiKey}`);
+        return _transformCharacter(res.data.results[0]); //оптимизация, передача сразу необходимого объекта персонажа
+    }
     
-        if (!res.ok) {
-            throw new Error(`Could not fetch ${url}, status: ${res.status}`);
-        }
-    
-        return await res.json();
+    const getAllComics = async (offset = 0) => {
+        const res = await request (
+            `${_apiBase}comics?orderBy=issueNumber&limit=8&offset=${offset}&${_apiKey}`
+            );
+        return res.data.results.map(_transformComics);
     }
 
-    getAllCharacters = async (offset = this._baseOffset) =>{
-        const res = await this.getResource(`${this._apiBase}characters?limit=9&offset=${offset}&${this._apiKey}`);
-        return res.data.results.map(this._transformCharacter); //массив данных персонажей, которые в колбэке превращаются в массив объектов нужного формата
+    const getComics = async (id) => {
+        const res = await request(`${_apiBase}comics/${id}?${_apiKey}`);
+		return _transformComics(res.data.results[0]);
     }
 
-    getCharacter = async (id) =>{ //метод по получению персонажа и возврата данных в объект
-        const res = await this.getResource(`${this._apiBase}characters/${id}?${this._apiKey}`);
-        return this._transformCharacter(res.data.results[0]); //оптимизация, передача сразу необходимого объекта персонажа
-    }
-
-    _transformCharacter = (char) => { //метод по трансформации возвращаемого с сервера объекта в необходимые для нашего объекта данные
+    const _transformCharacter = (char) => { //функция по трансформации возвращаемого с сервера объекта в необходимые для нашего объекта данные
         return {
             id: char.id,
             name: char.name,
-            description: char.description ? `${char.description.slice(0, 210)}...` : 'There is no description for this character', //Обрезать описание, если слишком большое, а если текста нет, вставлять текст об отсутствии описания
+            description: char.description 
+                ? `${char.description.slice(0, 210)}...` 
+                : 'There is no description for this character', //Обрезать описание, если слишком большое, а если текста нет, вставлять текст об отсутствии описания
             thumbnail: char.thumbnail.path + '.' + char.thumbnail.extension,
             homepage: char.urls[0].url,
             wiki: char.urls[1].url,
             comics: char.comics.items,
-
         }
+    }
+
+    const _transformComics = (comics) => { //функция по трансформации возвращаемого с сервера объекта комикса в необходимые для нашего объекта данные
+        return {
+            id: comics.id,
+			title: comics.title,
+			description: comics.description || "There is no description",
+			pageCount: comics.pageCount
+				? `${comics.pageCount} p.`
+				: "No information about the number of pages",
+			thumbnail: comics.thumbnail.path + "." + comics.thumbnail.extension,
+			language: comics.textObjects[0]?.language || "en-us",
+            // ?. оператор опциональной цепочки, если comics.textObjects[0]?.language нет, то тогда значение будет undefined, вместо генерации ошибки
+			price: comics.prices[0].price
+				? `${comics.prices[0].price}$`
+				: "not available",
+        }
+    }
+
+    return {
+        loading, 
+        error, 
+        getAllCharacters, 
+        getCharacter, 
+        clearError,
+        getComics,
+        getAllComics
     }
 }
 
-export default MarvelService;
+export default useMarvelService;
