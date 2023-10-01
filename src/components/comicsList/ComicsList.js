@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import Spinner from '../spinner/Spinner';
 import ErrorMessage from '../errorMessage/ErrorMessage';
 import useMarvelService from '../../services/MarvelService';
@@ -29,20 +30,20 @@ const ComicsList = () => {
             ended = true;
         }
         setComicsList(comicsList => [...comicsList, ...newComicsList]);//формирование нового массива из новых и старых элементов. При первом запуске, в этой функции массив charList пустой и формируется только из newCharList
-        setNewItemLoading(newItemLoading => false);
+        setNewItemLoading(false);
         setOffset(offset => offset + 8); //увеличение отступа комиксов на 8, для дозагрузки новых
-        setComicsEnded(comicsEnded => ended); //метка для окончания комиксов
+        setComicsEnded(ended); //метка для окончания комиксов
     }
 
     function renderItems (arr) {
         const items = arr.map((item, i) => {
             return (
-                <li className="comics__item">
-                <a href="#">
+                <li className="comics__item" key ={i}>
+                <Link to={`/comics/${item.id}`}>
                     <img src={item.thumbnail} alt={item.title} className="comics__item-img"/>
                     <div className="comics__item-name">{item.title}</div>
                     <div className="comics__item-price">{item.price}</div>
-                </a>
+                </Link>
             </li>
             )
         })
