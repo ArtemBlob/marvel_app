@@ -1,8 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
+import { CSSTransition, TransitionGroup } from 'react-transition-group';
+
 import Spinner from '../spinner/Spinner';
 import ErrorMessage from '../errorMessage/ErrorMessage';
 import useMarvelService from '../../services/MarvelService';
+
 import './charList.scss';
 
 const CharList = (props) => {
@@ -52,29 +55,33 @@ const CharList = (props) => {
             }
             
             return (
-                <li
-                className='char__item'
-                tabIndex={0}
-                ref={el => itemRefs.current[i] = el} //коллбэк реф, который принимает в себя единственным аргументом тот элемент, на котором он был вызван, в данном случае это list item (li). Перееносим li в массив
-                onClick={() => {
-                    props.onCharSelected(item.id); //получение id для передачи пропса происходит из объекта в MarvelService
-                    focusOnItem(i); //вызов функции фокуса
-                }}
-                onKeyDown={(e) => { //управление элементами нажатием клавиш
-                    if (e.key === ' ' || e.key === "Enter") {
-                        this.props.onCharSelected(item.id);
-                        this.focusOnItem(i);
-                    }
-                }}>
-                    <img src={item.thumbnail} alt={item.name} style={imgStyle}/>
-                    <div className='char__name'>{item.name}</div>
-                </li>
+                <CSSTransition key={item.id} timeout={500} classNames="char__item">
+                    <li
+                        className='char__item'
+                        tabIndex={0}
+                        ref={el => itemRefs.current[i] = el} //коллбэк реф, который принимает в себя единственным аргументом тот элемент, на котором он был вызван, в данном случае это list item (li). Перееносим li в массив
+                        onClick={() => {
+                            props.onCharSelected(item.id); //получение id для передачи пропса происходит из объекта в MarvelService
+                            focusOnItem(i); //вызов функции фокуса
+                        }}
+                        onKeyDown={(e) => { //управление элементами нажатием клавиш
+                            if (e.key === ' ' || e.key === "Enter") {
+                                this.props.onCharSelected(item.id);
+                                this.focusOnItem(i);
+                            }
+                        }}>
+                            <img src={item.thumbnail} alt={item.name} style={imgStyle}/>
+                            <div className='char__name'>{item.name}</div>
+                    </li>
+                </CSSTransition>
             )
         });
 
         return (
             <ul className='char__grid'>
-                {items}
+                <TransitionGroup component={null}> {/* <TransitionGroup> без явно указанного component или с component={undefined}, по умолчанию будет создан оберточный элемент div. Если component={null}, то <TransitionGroup> не будет создавать этот дополнительный div.   */}
+                    {items}
+                </TransitionGroup>
             </ul>
         )
     }
