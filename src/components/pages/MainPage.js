@@ -3,6 +3,8 @@ import { useState } from "react";
 import RandomChar from "../randomChar/RandomChar";
 import CharList from "../charList/CharList";
 import CharInfo from "../charInfo/CharInfo";
+import CharSearchForm from "../charSearchForm/CharSearchForm";
+
 import ErrorBoundary from "../errorBoundary/ErrorBoundary";
 
 import decoration from '../../resources/img/vision.png';
@@ -26,9 +28,14 @@ const MainPage = () => {
                 <ErrorBoundary>
                     <CharList onCharSelected={onCharSelected}/>
                 </ErrorBoundary>
-                <ErrorBoundary>
-                    <CharInfo charId = {selectedChar}/>
-                </ErrorBoundary>
+                <div> {/* div, для того, чтобы обернуть CharInfo и CharSearchForm в один блок, чтобы grid нормально отобразил их на странице в отдельном блоке */}
+                    <ErrorBoundary>
+                        <CharInfo charId = {selectedChar}/>
+                    </ErrorBoundary>
+                    <ErrorBoundary>
+                        <CharSearchForm/>
+                    </ErrorBoundary>
+                </div>
             </div>
             <img className="bg-decoration" src={decoration} alt="vision"/>
         </>
