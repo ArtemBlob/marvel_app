@@ -8,6 +8,22 @@ import useMarvelService from '../../services/MarvelService';
 
 import './charList.scss';
 
+const setContent = (process, Component, newItemLoading) => {
+    switch(process) { // специалньая SFM конструкция для проверки состояния процесса и рендеринга компонентов на страницу соответственно
+        case 'waiting':
+            return <Spinner/>;
+        case 'loading':
+            return newItemLoading ? <Component/> : <Spinner/>; //если будет подзагрузка новых элементов, то спинер запускать не нужно
+        case 'confirmed':
+            return <Component/>; //рендеринг компонента, если все подтверждено
+        case 'error':
+            return <ErrorMessage/>;
+        default:
+            throw new Error('Unexpected process state');
+    }
+}
+
+
 const CharList = (props) => {
 
     const [charList, setCharList] = useState([]);
@@ -15,7 +31,7 @@ const CharList = (props) => {
     const [offset, setOffset] = useState(210); //текущий отступ списка персонажей в сервисе Марвел АПИ, добавлено для изменений
     const [charEnded, setCharEnded] = useState(false);  //на сервисе закончились персонажи
 
-    const {loading, error, getAllCharacters} = useMarvelService();
+    const {getAllCharacters, process, setProcess} = useMarvelService();
 
     useEffect(() => {
         onRequest(offset, true); //будет подставлен offset, равный 9. Второй аргумент true для первичной загрузки
@@ -26,6 +42,7 @@ const CharList = (props) => {
         initial ? setNewItemLoading(false) : setNewItemLoading(true); //если загрузка первичная, то загрузку запускать надо. При повторной загрузке состояние true, то есть не нужно запускать спиннер
         getAllCharacters(offset)
             .then(onCharListLoaded)
+            .then(() => setProcess('confirmed'));  //когда процесс запрооса завершен, он переходит в состояние confirmed
     }
 
     const onCharListLoaded = (newCharList) => { //функция по загрузке листа персонажей
@@ -34,9 +51,9 @@ const CharList = (props) => {
             ended = true;
         }
         setCharList(charList => [...charList, ...newCharList]);//формирование нового массива из новых и старых элементов. При первом запуске, в этой функции массив charList пустой и формируется только из newCharList
-        setNewItemLoading(newItemLoading => false);
+        setNewItemLoading(false);
         setOffset(offset => offset + 9); //увеличение отступа персонажей на 9, для дозагрузки новых персонажей
-        setCharEnded(charEnded => ended); //метка для окончания персонажей
+        setCharEnded(ended); //метка для окончания персонажей
     }
 
     const itemRefs = useRef([]); //это массив, в котором будут храниться ссылки на DOM-элементы, создан, чтобы иметь доступ к элементам по индексу
@@ -86,15 +103,9 @@ const CharList = (props) => {
         )
     }
 
-    const items = renderItems(charList);
-    const errorMessage = error ? <ErrorMessage/> : null;
-    const spinner = loading && !newItemLoading ? <Spinner/> : null; //запускать загрузку только тогда, когда это не загрузка новых персонажей. Запуск спиннера только при первом загружении
-
     return (
         <div className="char__list">
-            {errorMessage}
-            {spinner}
-            {items}
+            {setContent(process, () => renderItems(charList), newItemLoading)}
             <button className="button button__main button__long"
                     disabled={newItemLoading}
                     style={{'display': charEnded ? 'none' : 'block'}} //ecли charEnded (закончились персонажи на сервиса) true - display: none, иначе display: block

@@ -1,9 +1,27 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+
 import Spinner from '../spinner/Spinner';
 import ErrorMessage from '../errorMessage/ErrorMessage';
 import useMarvelService from '../../services/MarvelService';
+
 import './comicsList.scss';
+
+const setContent = (process, Component, newItemLoading) => {
+    switch(process) { // специалньая SFM конструкция для проверки состояния процесса и рендеринга компонентов на страницу соответственно
+        case 'waiting':
+            return <Spinner/>;
+        case 'loading':
+            return newItemLoading ? <Component/> : <Spinner/>; //если будет подзагрузка новых элементов, то спинер запускать не нужно
+        case 'confirmed':
+            return <Component/>; //рендеринг компонента, если все подтверждено
+        case 'error':
+            return <ErrorMessage/>;
+        default:
+            throw new Error('Unexpected process state');
+    }
+}
+
 
 const ComicsList = () => {
     const [comicsList, setComicsList] = useState([]);
@@ -11,7 +29,7 @@ const ComicsList = () => {
     const [offset, setOffset] = useState(0); //текущий отступ списка комиксов в сервисе Марвел АПИ, добавлено для изменений
     const [comicsEnded, setComicsEnded] = useState(false);  //на сервисе закончились комикса
 
-    const {loading, error, getAllComics} = useMarvelService();
+    const {getAllComics, process, setProcess} = useMarvelService();
 
     useEffect(() => {
         onRequest(offset, true); //будет подставлен offset, равный 8. Второй аргумент true для первичной загрузки
@@ -22,6 +40,7 @@ const ComicsList = () => {
         initial ? setNewItemLoading(false) : setNewItemLoading(true); //если загрузка первичная, то загрузку запускать надо. При повторной загрузке состояние true, то есть не нужно запускать спиннер
         getAllComics(offset)
             .then(onComicsListLoaded)
+            .then(() => setProcess('confirmed'));  //когда процесс запрооса завершен, он переходит в состояние confirmed
     }
 
     const onComicsListLoaded = (newComicsList) => { //функция по загрузке листа комиксов
@@ -54,15 +73,9 @@ const ComicsList = () => {
         )
     }
 
-    const items = renderItems(comicsList);
-    const errorMessage = error ? <ErrorMessage/> : null;
-    const spinner = loading && !newItemLoading ? <Spinner/> : null; //запускать загрузку только тогда, когда это не загрузка новых персонажей. Запуск спиннера только при первом загружении
-
     return (
         <div className="comics__list">
-            {errorMessage}
-            {spinner}
-            {items}
+            {setContent(process, () => renderItems(comicsList), newItemLoading)}
             <button className="button button__main button__long"
                     disabled ={newItemLoading}
                     style={{'display': comicsEnded ? 'none' : 'block'}}

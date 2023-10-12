@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import Spinner from '../spinner/Spinner';
-import Skeleton from '../skeleton/Skeleton';
-import ErrorMessage from '../errorMessage/ErrorMessage';
+
 import useMarvelService from '../../services/MarvelService';
+import setContent from '../../utils/setContent';
+
 import './charInfo.scss';
 
 const CharInfo = (props) => {
 
     const [char, setChar] = useState(null);
 
-    const {loading, error, getCharacter, clearError} = useMarvelService();
+    const {getCharacter, clearError, process, setProcess} = useMarvelService();
 
     useEffect(() => {
         updateChar();
@@ -27,31 +27,22 @@ const CharInfo = (props) => {
         clearError(); //очистка ошибки для отрисовки новых данных
         getCharacter(charId) //получение персонажа по айди
             .then(onCharLoaded)
+            .then(() => setProcess('confirmed'));  //когда процесс запрооса завершен, он переходит в состояние confirmed
     }
 
     const onCharLoaded = (char) => { //функция по загрузке персонажа
         setChar(char);  // {char} - тоже самое что и {char:char}.
     }
 
-
-    const skeleton = char || error || loading ? null : <Skeleton/>;
-    const errorMessage = error ? <ErrorMessage/> : null;
-    const spinner = loading ? <Spinner/> : null;
-    const content = !(loading || error || !char) ? <View char={char}/> : null; //если нет ошибки и загрузки, и есть персонаж, запускать рендерящийся компонент. null ничего на странице не отобразит
-
-
     return (
         <div className="char__info">
-            {skeleton}
-            {errorMessage}
-            {spinner}
-            {content}
+            {setContent(process, View, char)}
         </div>
     )
 }
 
-const View = ({char}) => {
-    const {name, description, thumbnail, homepage, wiki, comics} = char;
+const View = ({data}) => {
+    const {name, description, thumbnail, homepage, wiki, comics} = data;
     //конструкция для настройки нормальной формы изображения
     let imgStyle = {'objectFit' : 'cover'};
     if (thumbnail === 'http://i.annihil.us/u/prod/marvel/i/mg/b/40/image_not_available.jpg') {
